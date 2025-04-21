@@ -55,6 +55,7 @@ knowledge_analysis_prompt = PromptTemplate(
     input_variables=["learning_path", "chat_history"],
     template="""Based on the following learning path and the user's conversation history, 
 analyze the user's knowledge level and determine what they should practice next and at what difficulty.
+Consider the user's most recent answer in the chat history: if they answered correctly, consider increasing the difficulty or moving to the next step in the learning path. If they answered incorrectly, consider staying on the same topic with the same or lower difficulty.
 
 Learning path: {learning_path}
 
@@ -77,7 +78,11 @@ question_preference_prompt = PromptTemplate(
     input_variables=["next_topic", "difficulty"],
     template="""You will be studying "{next_topic}" at a "{difficulty}" difficulty level.
 
-Would you like personalized generated questions or authoritative questions from our database? Please respond with "personalized" or "authoritative"."""
+Choose your question type:
+1. Personalized - Questions generated specifically for you
+2. Authoritative - Questions from our verified database
+
+Please respond with either "personalized" or "authoritative"."""
 )
 
 # Generate personalized questions
@@ -102,13 +107,17 @@ Please output the following JSON format:
 
 # Select the most appropriate question
 select_question_prompt = PromptTemplate(
-    input_variables=["questions", "user_level", "topic"],
-    template="""From the following 3 questions, select the most appropriate one for the user's current level and learning topic:
+    input_variables=["questions", "user_level", "topic", "asked_questions"],
+    template="""From the following list of questions, select the most appropriate one for the user's current level and learning topic. 
+IMPORTANT: Do NOT select a question that is present in the 'Asked Questions' list.
 
 User level: {user_level}
 Learning topic: {topic}
-Question list:
+Available Questions (JSON list):
 {questions}
+
+Asked Questions (JSON list):
+{asked_questions}
 
 Please output the following JSON format:
 ```json
