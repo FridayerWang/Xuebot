@@ -1,0 +1,96 @@
+digraph G {
+    fontname="Helvetica,Arial,sans-serif"
+    node [fontname="Helvetica,Arial,sans-serif" shape=box style=filled fillcolor=lightblue]
+    edge [fontname="Helvetica,Arial,sans-serif"]
+    
+    // Main components
+    user [label="User" shape=ellipse fillcolor=lightyellow]
+    aws [label="AWS" shape=cloud fillcolor=lightgrey]
+    
+    subgraph cluster_0 {
+        label="AWS Elastic Beanstalk Environment\n(xuebot-env)"
+        color=blue
+        style=filled
+        fillcolor=aliceblue
+        
+        eb_app [label="Elastic Beanstalk\nApplication (xuebot-app)" fillcolor=lightsteelblue]
+        ec2 [label="EC2 Instance\n(t2.micro)\nAmazon Linux 2023" fillcolor=white]
+        
+        subgraph cluster_1 {
+            label="Flask Application"
+            color=darkgreen
+            style=filled
+            fillcolor=honeydew
+            
+            app [label="app.py\n(Flask Web Server)" fillcolor=palegreen]
+            agent [label="EducationAgent\n(agent.py)" fillcolor=palegreen]
+            
+            subgraph cluster_2 {
+                label="Data Layer"
+                color=purple
+                style=filled
+                fillcolor=lavender
+                
+                vector_store [label="Vector Store\n(Chroma DB)" fillcolor=white]
+                chroma_files [label="Local ChromaDB Files\n(./chroma_db)" fillcolor=white]
+                mock_data [label="Mock Data\n(data.py)" fillcolor=white]
+                
+                vector_store -> chroma_files [label="read/write"]
+            }
+            
+            chains [label="LangChain Chains\n(chains.py)" fillcolor=palegreen]
+            logger_system [label="Logging System\n(logger.py)" fillcolor=palegreen]
+            
+            app -> agent [label="process()"]
+            agent -> chains [label="call"]
+            agent -> vector_store [label="search/query"]
+            agent -> mock_data [label="fallback"]
+            chains -> vector_store [label="search"]
+            app -> logger_system [label="log events"]
+            agent -> logger_system [label="log events"]
+        }
+        
+        eb_app -> ec2 [label="manages"]
+        ec2 -> app [label="runs"]
+        
+        logs [label="Log Files\n(./logs)" fillcolor=white]
+        logger_system -> logs [label="write"]
+    }
+    
+    // External services
+    openai [label="OpenAI API" shape=cloud fillcolor=lightgrey]
+    huggingface [label="HuggingFace\nEmbedding Models" shape=cloud fillcolor=lightgrey]
+    
+    // Connections
+    user -> aws [label="HTTPS"]
+    aws -> eb_app [label="route traffic"]
+    chains -> openai [label="API calls"]
+    vector_store -> huggingface [label="embedding\nmodel"]
+    
+    // Deployment
+    deploy [label="Deployment Script\n(deploy_eb.sh)" shape=cog fillcolor=lightcoral]
+    deploy -> aws [label="deploy to"]
+    
+    // Legends and notes
+    subgraph cluster_legend {
+        label="Legend"
+        style=filled
+        fillcolor=ghostwhite
+        
+        legend_app [label="Application Components" fillcolor=palegreen]
+        legend_infra [label="Infrastructure" fillcolor=lightsteelblue]
+        legend_data [label="Data Storage" fillcolor=white]
+        legend_external [label="External Services" shape=cloud fillcolor=lightgrey]
+        legend_deploy [label="Deployment Tools" shape=cog fillcolor=lightcoral]
+        
+        legend_app -> legend_infra [style=invis]
+        legend_infra -> legend_data [style=invis]
+        legend_data -> legend_external [style=invis]
+        legend_external -> legend_deploy [style=invis]
+    }
+    
+    // Environment variables (note)
+    env_vars [label="Environment Variables\n- OPENAI_API_KEY\n- USE_VECTOR_STORE\n- VECTOR_STORE_DIR\n- EMBEDDING_MODEL\n- LOG_LEVEL\n- CONSOLE_LOG_LEVEL\n- FILE_LOG_LEVEL" shape=note fillcolor=lightyellow]
+    
+    env_vars -> eb_app [label="configured in" style=dashed]
+} 

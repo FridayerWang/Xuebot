@@ -3,5 +3,9 @@
 venv
 chroma_db
 logs
-.env
 .cursorignore
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
